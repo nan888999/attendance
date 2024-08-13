@@ -8,6 +8,48 @@ a {
   padding: 10px 40px;
 }
 
+.header__inner {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.header-nav-list {
+  display: flex;
+  font-size: 12px;
+  font-weight: 600;
+}
+
+.header-nav-item {
+  cursor: pointer;
+}
+
+.header-nav-item:not(:last-child) {
+  margin-right: 30px;
+}
+
+.alert {
+  padding: 10px 30px;
+  border-color: #badbcc;
+  background-color: #d1e7dd;
+  color: #0f5132;
+}
+
+.alert-danger {
+  padding: 5px 30px;
+  border-color: pink;
+  background-color: rgb(255, 218, 192);
+  color: red;
+}
+
+input.logout {
+  cursor: pointer;
+  border: none;
+  background-color: white;
+  align-items: center;
+  font-weight: 600;
+}
+
 .header__title {
   font-size: 20px;
   font-weight: 600;

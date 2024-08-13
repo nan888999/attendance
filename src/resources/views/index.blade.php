@@ -24,15 +24,15 @@
 <div class="content__item">
   <form action="/workStart" method="post">
     @csrf
-    @if($workStart->isEmpty())
+    @if($work_start->isEmpty())
       <button type="submit" class="available">勤務開始</button>
       @else
       <button type="button" class="non-available">勤務開始</button>
     @endif
   </form>
-  <form action="/workEnd" method="post">
+  <form action="/work_end" method="post">
     @csrf
-    @if(!$workStart->isEmpty() && $workStart->last()->created_at == $workEnd->last()->updated_at)
+    @if(!$work_start->isEmpty() && $work_start->last()->created_at == $work_end->last()->updated_at)
       <button type="submit" class="available">勤務終了</button>
       @else
       <button type="button" class="non-available">勤務終了</button>
@@ -42,7 +42,7 @@
 <div class="content__item">
   <form action="/breakStart" method="post">
     @csrf
-    @if(!$workStart->isEmpty() && ($workStart->last()->created_at == $workEnd->last()->updated_at) && ($breakStart->isEmpty() || $breakStart->last()->created_at != $breakEnd->last()->updated_at))
+    @if(!$work_start->isEmpty() && ($work_start->last()->created_at == $work_end->last()->updated_at) && ($break_start->isEmpty() || $break_start->last()->created_at != $break_end->last()->updated_at))
       <button type="submit" class="available">休憩開始</button>
       @else
       <button type="button" class="non-available">休憩開始</button>
@@ -50,7 +50,7 @@
   </form>
   <form action="/breakEnd" method="post">
     @csrf
-    @if(!$breakStart->isEmpty() && $breakStart->last()->created_at == $breakEnd->last()->updated_at)
+    @if(!$work_start->isEmpty() && ($work_start->last()->created_at == $work_end->last()->updated_at) && (!$break_start->isEmpty() && $break_start->last()->created_at == $break_end->last()->updated_at))
       <button type="submit" class="available">休憩終了</button>
       @else
       <button type="button" class="non-available">休憩終了</button>

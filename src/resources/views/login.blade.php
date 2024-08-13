@@ -8,7 +8,7 @@
 
 @section('content')
 <div class="content__item">
-  <form class="form" action="" method="post">
+  <form class="form" action="/login" method="post">
     @csrf
     <input class="form__input" type="text" name="email" placeholder="メールアドレス" value="{{ old('email') }}">
       <div class="form__error">
@@ -26,7 +26,7 @@
   </form>
   <div class="comment">
     アカウントをお持ちでない方はこちらから<br>
-    <a href="/register">会員登録</a>
+    <a href="/verifyEmail">会員登録</a>
   </div>
 </div>
 @endsection

@@ -45,8 +45,9 @@ class EndWork extends Command
         foreach($attendances as $attendance) {
             $attendance->updated_at = $today->copy()->addDay()->startOfDay();
             $attendance->save();
-            $this->info('Updated ' . $attendances->count() . ' records.');
-            return 0;
         }
+
+        $this->info('Updated ' . $attendances->count() . ' records.');
+        return 0;
     }
 }

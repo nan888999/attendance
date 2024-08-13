@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Http\Request;
+use App\Models\User;
 use App\Models\Attendance;
 use App\Models\BreakTime;
 use Carbon\Carbon;
@@ -14,114 +15,74 @@ class AttendanceController extends Controller
     {
         $date = $request->input('date', Carbon::today()->toDateString());
 
-        // 現在の日付と一致するデータを取得
-        $attendances = Attendance::with('user')->whereDate('created_at', $date)->paginate(5);
-
-        $breaks = BreakTime::with('user')->whereDate('created_at', $date)->get();
-
-        // 休憩時間計算
-        $userBreakTimes = [];
-        foreach($breaks as $break) {
-            if(!is_null($break->updated_at)) {
-                $userId = $break->user_id;
-                $breakTime = $break->created_at->diffInSeconds($break->updated_at);
-                if(!isset($userBreakTimes[$userId])) {
-                    $userBreakTimes[$userId] = 0;
-                }
-                $userBreakTimes[$userId] += $breakTime;
-            }
-        }
-        $formattedBreakTimes = [];
-        foreach($userBreakTimes as $userId => $totalBreakSeconds) {
-            $breakHours = floor($totalBreakSeconds / 3600);
-            $breakMinutes = floor(($totalBreakSeconds %3600)/ 60);
-            $breakSeconds = $totalBreakSeconds % 60;
-            $formattedBreakTimes[$userId] = sprintf('%02d:%02d:%02d', $breakHours, $breakMinutes, $breakSeconds);
-        }
-
-        // 勤務時間計算
-        $formattedWorkTimes = [];
-        foreach($attendances as $attendance){
-            $userId = $attendance->user_id;
-            $userWorkSeconds = $attendance->created_at->diffInSeconds($attendance->updated_at);
-            if(isset($userBreakTimes[$userId])){
-                $userWorkSeconds -= $userBreakTimes[$userId];
-            }
-        $workHours = floor($userWorkSeconds / 3600);
-        $workMinutes = floor(($userWorkSeconds %3600)/ 60);
-        $workSeconds = $userWorkSeconds % 60;
-        $formattedWorkTimes[$userId] = sprintf('%02d:%02d:%02d', $workHours, $workMinutes, $workSeconds);
-        }
-
-        return view ('attendance', compact('attendances', 'date', 'breaks', 'formattedBreakTimes', 'formattedWorkTimes'));
+        return $this->getAttendanceView($date);
     }
 
     public function changeDate(Request $request)
     {
         $date = $request->input('date');
-        // 日付変更のリクエストがあれば、日付を変更
-        if ($request->has('change_date')) {
-        $direction = $request->input('change_date');
-            if (is_string($date)) {
-            $date = strtotime($date);
-            }
-            if ($direction == 'previous') {
-                $date = strtotime("-1 day", $date);
-            } elseif ($direction == 'next') {
-                $date = strtotime('+1 day', $date);
-            }
-            $date = date('Y-m-d', $date);
-        }
 
-        // 現在の日付と一致するデータを取得
+        if ($request->has('change_date')) {
+            $direction = $request->input('change_date');
+            $date = strtotime($date);
+
+            if ($direction == 'previous') {
+                    $date = strtotime("-1 day", $date);
+            } elseif ($direction == 'next') {
+                    $date = strtotime('+1 day', $date);
+            }
+        $date = date('Y-m-d', $date);
+    }
+        return $this->getAttendanceView($date);
+    }
+
+    private function getAttendanceView($date)
+    {
         $attendances = Attendance::with('user')->whereDate('created_at', $date)->paginate(5);
 
-        $breaks = BreakTime::with('user')->whereDate('created_at', $date)->get();
-
         // 休憩時間計算
-        $userBreakTimes = [];
+        $breaks = BreakTime::with('attendance')->whereDate('created_at', $date)->get();
+        $attendanceBreakTimes = [];
         foreach($breaks as $break) {
             if(!is_null($break->updated_at)) {
-                $userId = $break->user_id;
-                $breakTime = $break->created_at->diffInSeconds($break->updated_at);
-                if(!isset($userBreakTimes[$userId])) {
-                    $userBreakTimes[$userId] = 0;
+                $attendance_id = $break->attendance_id;
+                $break_time = $break->created_at->diffInSeconds($break->updated_at);
+                if(!isset($attendance_break_times[$attendance_id])) {
+                    $attendance_break_times[$attendance_id] = 0;
                 }
-                $userBreakTimes[$userId] += $breakTime;
+                $attendance_break_times[$attendance_id] += $break_time;
             }
         }
-        $formattedBreakTimes = [];
-        foreach($userBreakTimes as $userId => $totalBreakSeconds) {
-            $breakHours = floor($totalBreakSeconds / 3600);
-            $breakMinutes = floor(($totalBreakSeconds %3600)/ 60);
-            $breakSeconds = $totalBreakSeconds % 60;
-            $formattedBreakTimes[$userId] = sprintf('%02d:%02d:%02d', $breakHours, $breakMinutes, $breakSeconds);
+        $formatted_break_times = [];
+        foreach($attendance_break_times as $attendance_id => $total_break_seconds) {
+            $break_hours = floor($total_break_seconds / 3600);
+            $break_minutes = floor(($total_break_seconds % 3600)/ 60);
+            $break_seconds = $total_break_seconds % 60;
+            $formatted_break_times[$attendance_id] = sprintf('%02d:%02d:%02d', $break_hours, $break_minutes, $break_seconds);
         }
 
         // 勤務時間計算
-        $formattedWorkTimes = [];
+        $formatted_work_times = [];
         foreach($attendances as $attendance){
-            $userId = $attendance->user_id;
-            $userWorkSeconds = $attendance->created_at->diffInSeconds($attendance->updated_at);
-            if(isset($userBreakTimes[$userId])){
-                $userWorkSeconds -= $userBreakTimes[$userId];
+            $user_id = $attendance->user_id;
+            $user_work_seconds = $attendance->created_at->diffInSeconds($attendance->updated_at);
+            if(isset($attendance_break_times[$attendance->id])){
+                $user_work_seconds -= $attendance_break_times[$attendance->id];
             }
-        $workHours = floor($userWorkSeconds / 3600);
-        $workMinutes = floor(($userWorkSeconds %3600)/ 60);
-        $workSeconds = $userWorkSeconds % 60;
-        $formattedWorkTimes[$userId] = sprintf('%02d:%02d:%02d', $workHours, $workMinutes, $workSeconds);
+        $work_hours = floor($user_work_seconds / 3600);
+        $work_minutes = floor(($user_work_seconds %3600)/ 60);
+        $work_seconds = $user_work_seconds % 60;
+        $formatted_work_times[$attendance->id] = sprintf('%02d:%02d:%02d', $work_hours, $work_minutes, $work_seconds);
         }
-        return view ('attendance', compact('attendances', 'date', 'breaks', 'formattedBreakTimes', 'formattedWorkTimes'));
+        return view ('attendance', compact('attendances', 'date', 'breaks', 'formatted_break_times', 'formatted_work_times'));
     }
 
     public function workStart(Request $request)
     {
-        // 現在のユーザーIDを取得
-        $userId = Auth::id();
+        $user_id = Auth::id();
 
-        // レコードの挿入
         Attendance::create([
-            'user_id' => $userId,
+            'user_id' => $user_id,
             'created_at' => now(),
             'updated_at' => now(),
         ]);
@@ -131,31 +92,78 @@ class AttendanceController extends Controller
 
     public function workEnd(Request $request)
     {
-        // 現在のユーザーIDを取得
-        $userId = Auth::id();
+        $user_id = Auth::id();
 
-        Attendance::where('user_id', $userId)->whereDate('created_at', Carbon::today())->update(['updated_at' => now()]);
+        Attendance::where('user_id', $user_id)->whereDate('created_at', Carbon::today())->update(['updated_at' => now()]);
 
         return redirect ('/');
     }
 
     public function breakStart(Request $request)
     {
-        $userId = Auth::id();
-        BreakTime::create([
-            'user_id' => $userId,
-            'created_at' => now(),
-            'updated_at' => now(),
-        ]);
-
+        $user_id = Auth::id();
+        $attendance = Attendance::where('user_id', $user_id)->whereDate('created_at', Carbon::today())->first();
+        if($attendance){
+            BreakTime::create([
+                'attendance_id' => $attendance->id,
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
         return redirect('/');
     }
 
     public function breakEnd(Request $request)
     {
-        $userId = Auth::id();
-        BreakTime::where('user_id', $userId)->whereDate('created_at', Carbon::today())->update(['updated_at' => now()]);
-
+        $user_id = Auth::id();
+        $attendance = Attendance::where('user_id', $user_id)->whereDate('created_at', Carbon::today())->first();
+        if($attendance){
+            BreakTime::where('attendance_id', $attendance->id)->whereDate('created_at', Carbon::today())->update(['updated_at' => now()]);
+        }
         return redirect('/');
+    }
+
+    // ユーザー別勤怠表示
+    public function showProfile($user_id)
+    {
+        $user = User::where('id', $user_id)->first();
+        $attendances = Attendance::where('user_id',$user_id)->paginate(10);
+
+        // 休憩時間計算
+        $attendance_break_times = [];
+        foreach($attendances as $attendance) {
+            $breaks = BreakTime::where('attendance_id', $attendance->id)->get();
+            if($breaks) {
+                foreach($breaks as $break){
+                    $break_time = $break->created_at->diffInSeconds($break->updated_at);
+                    if(!isset($attendance_break_times[$attendance->id])) {
+                        $attendance_break_times[$attendance->id] = 0;
+                    }
+                    $attendance_break_times[$attendance->id] += $break_time;
+                }
+            }
+        }
+        $formatted_break_times = [];
+        foreach($attendance_break_times as $attendance->id => $total_break_seconds) {
+            $break_hours = floor($total_break_seconds / 3600);
+            $break_minutes = floor(($total_break_seconds %3600)/ 60);
+            $break_seconds = $total_break_seconds % 60;
+            $formatted_break_times[$attendance->id] = sprintf('%02d:%02d:%02d', $break_hours, $break_minutes, $break_seconds);
+        }
+
+        // 勤務時間計算
+        $formatted_work_times = [];
+        foreach($attendances as $attendance){
+            $user_work_seconds = $attendance->created_at->diffInSeconds($attendance->updated_at);
+            if(isset($attendance_break_times[$attendance->id])){
+                $user_work_seconds -= $attendance_break_times[$attendance->id];
+            }
+        $work_hours = floor($user_work_seconds / 3600);
+        $work_minutes = floor(($user_work_seconds % 3600)/ 60);
+        $work_seconds = $user_work_seconds % 60;
+        $formatted_work_times[$attendance->id] = sprintf('%02d:%02d:%02d', $work_hours, $work_minutes, $work_seconds);
+        }
+
+        return view ('user_profile', compact('user', 'attendances', 'formatted_break_times', 'formatted_work_times'));
     }
 }

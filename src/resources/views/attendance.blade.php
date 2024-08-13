@@ -42,7 +42,9 @@
       @foreach($attendances as $attendance)
       <tr class="attendance__table-row">
           <td class="attendance__table-data">
-            {{ $attendance->user->name ?? '' }}
+            <a class="user_name" href="{{ route('user.profile', ['userId' => $attendance->user_id]) }}">
+              {{ $attendance->user->name ?? '' }}
+            </a>
           </td>
           <td class="attendance__table-data">{{ $attendance->created_at->format('H:i:s') ?? '' }}</td>
           <td class="attendance__table-data">
@@ -53,11 +55,11 @@
             @endif
           </td>
         <td class="attendance__table-data">
-          {{ $formattedBreakTimes[$attendance->user_id] ?? '' }}
+          {{ $formattedBreakTimes[$attendance->id] ?? '00:00:00' }}
         </td>
         <td class="attendance__table-data">
           @if($attendance->created_at != $attendance->updated_at)
-          {{ $formattedWorkTimes[$attendance->user_id] ?? '' }}
+          {{ $formattedWorkTimes[$attendance->id] ?? '' }}
           @else
           {{ '' }}
           @endif

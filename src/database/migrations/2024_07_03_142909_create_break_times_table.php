@@ -10,7 +10,7 @@ class CreateBreakTimesTable extends Migration
     {
         Schema::create('break_times', function (Blueprint $table) {
             $table->id();
-            $table->unsignedBigInteger('user_id');
+            $table->foreignId('attendance_id')->constrained('attendances')->cascadeOnUpdate()->cascadeOnDelete();
             $table->timestamps();
         });
     }

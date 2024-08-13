@@ -7,37 +7,32 @@ use Illuminate\Database\Eloquent\Factories\HasFactory;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use App\Notifications\CustomVerifyEmail;
 
-class User extends Authenticatable
+class User extends Authenticatable implements MustVerifyEmail
 {
     use HasApiTokens, HasFactory, Notifiable;
 
-    /**
-     * The attributes that are mass assignable.
-     *
-     * @var array<int, string>
-     */
+    // メールアドレスを確認済にする
+    public function markEmailAsVerified() {
+        $this->email_verified_at = now();
+        $this->save();
+    }
+
+    public function sendEmailVerificationNotification() {
+        $this->notify(new CustomVerifyEmail);
+    }
+
     protected $fillable = [
-        'name',
-        'email',
-        'password',
+        'name', 'email', 'password',
+        'email_verified', 'email_verify_token'
     ];
 
-    /**
-     * The attributes that should be hidden for serialization.
-     *
-     * @var array<int, string>
-     */
     protected $hidden = [
         'password',
         'remember_token',
     ];
 
-    /**
-     * The attributes that should be cast.
-     *
-     * @var array<string, string>
-     */
     protected $casts = [
         'email_verified_at' => 'datetime',
     ];

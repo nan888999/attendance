@@ -2,9 +2,12 @@
 
 namespace App\Http\Controllers;
 
+use Illuminate\Support\Facades\URL;
+use Illuminate\Support\Facades\Mail;
+use App\Mail\EmailVerification;
 use Illuminate\Http\Request;
 use App\Http\Requests\UserRequest;
-use App\Http\Requests\LoginRequest;
+use App\Http\Requests\MailRequest;
 use Illuminate\Support\Facades\Hash;
 use Illuminate\Support\Facades\Auth;
 use App\Models\Attendance;
@@ -14,75 +17,159 @@ use Carbon\Carbon;
 
 class UserController extends Controller
 {
-    public function index(){
-    if (Auth::check()) {
-        $user = Auth::user();
+    public function index()
+    {
+        if (Auth::check()) {
+            $user = Auth::user();
 
-        $workStart = Attendance::where('user_id', $user->id)->whereDate('created_at', Carbon::today()->toDateString())->get();
+            $work_start = Attendance::where('user_id', $user->id)->whereDate('created_at', Carbon::today()->toDateString())->get();
 
-        $workEnd = Attendance::where('user_id', $user->id)->whereDate('updated_at', Carbon::today()->toDateString())->get();
+            $work_end = Attendance::where('user_id', $user->id)->whereDate('updated_at', Carbon::today()->toDateString())->get();
 
-        $breakStart = BreakTime::where('user_id', $user->id)->whereDate('created_at', Carbon::today()->toDateString())->get();
+            $break_start = collect();
+            $break_end = collect();
 
-        $breakEnd = BreakTime::where('user_id', $user->id)->whereDate('updated_at', Carbon::today())->get();
+            foreach ($work_start as $attendance) {
+                $break_start = $break_start->merge(BreakTime::where('attendance_id', $attendance->id)->whereDate('created_at', Carbon::today()->toDateString())->get());
+                $break_end = $break_end->merge(BreakTime::where('attendance_id', $attendance->id)->whereDate('updated_at', Carbon::today()->toDateString())->get());
+            }
 
-        return view('index', compact('workStart', 'workEnd', 'breakStart', 'breakEnd'));
+            return view('index', compact('work_start', 'work_end', 'break_start', 'break_end'));
         } else {
-        return redirect('/login');
+            return redirect('/login');
         }
     }
 
-    public function showRegister()
+    public function viewLogin()
     {
-        return view('register');
+        return view('login');
     }
 
-    public function register(UserRequest $request)
+    public function login(Request $request)
     {
-        // ユーザーの作成
-        $user = User::create([
-            'name'=>$request['name'],
-            'email'=>$request['email'],
-            'password'=>Hash::make($request['password'])
+        $credentials = $request->validate([
+            'email' => ['required'],
+            'password' => ['required'],
+        ],[
+            'email.required' => 'メールアドレスを入力してください',
+            'password.required' => 'パスワードを入力してください',
         ]);
 
-        // ユーザーをログインさせる
-        Auth::login($user);
-        return redirect()->route('index');
+        $user = User::where('email', $credentials['email'])->first();
+
+        if ($user && Auth::attempt($credentials)) {
+            $request->session()->regenerate();
+            return redirect()->intended('/');
+        }
+        return back()->with(
+            'error_message', 'メールアドレスかパスワードが一致しません'
+        );
     }
 
     public function logout()
     {
         Auth::logout();
-        return redirect('/login');
+        return redirect('/login')->with('message', 'ログアウトしました');
     }
 
-    public function showLogin()
+    // ユーザー登録ページの表示
+    public function viewRegister(Request $request)
     {
-        return view('login');
+        $user_id = $request->query('id');
+        return view('register', compact('user_id'));
     }
 
-    public function login(LoginRequest $request) {
-        $credentials = $request->validate([
-            'email' => ['required', 'email'],
-            'password' =>['required'],
+    // ユーザー登録処理
+    public function register(UserRequest $request) {
+        $user_id = $request->input('user_id');
+        $user = User::find($user_id);
+
+        // ユーザーが見つからない場合の処理
+        if (!$user) {
+            return redirect('/verify_email')->with('error_message', 'メールアドレスを認証してください');
+        }
+
+        $user->update([
+            'name' => $request->input('name'),
+            'password' => Hash::make($request->input('password')),
+            'email_verified' => '1',
         ]);
 
-        // メールアドレスが存在するか確認
-        $user = User::where('email', $credentials['email'])->first();
+        Auth::login($user);
 
-        if($user){
-            if(Auth::attempt($credentials)){
-                $request->session()->regenerate();
-                return redirect()->intended('/');
-            }
-            return back()->withErrors([
-                'password' => 'パスワードが違います'
-            ]);
-        } else {
-            return back()->withError([
-                'email' => 'メールアドレスが登録されていません'
-            ]);
+        return redirect('login')->with('message', '登録が完了しました');
+    }
+
+    // メール認証ページの表示
+    public function viewVerifyEmail()
+    {
+        return view ('auth.emails.email_verify');
+    }
+
+    // メール認証処理
+    public function verifyEmail(MailRequest $request)
+    {
+        $user = User::create([
+            'name' => $request['name'],
+            'email' => $request['email'],
+            'password' => Hash::make($request['password']),
+            'email_verify_token' => base64_encode($request['email']),
+        ]);
+        // メール確認リンクの生成
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+        // 認証メールの送信
+        Mail::to($user->email)->send(new EmailVerification($user, $verificationUrl));
+
+        return view ('auth.emails.verified', compact('verificationUrl'));
+    }
+
+    // 認証メール内リンククリック時の処理
+    public function emailVerified (Request $request, $id, $hash)
+    {
+        $user = User::find($id);
+        // ユーザーが見つからない場合
+        if (!$user) {
+            return redirect('/verify_email')->with('error_message', 'ユーザーが見つかりません');
         }
+        // hashの確認
+        if (sha1($user->email) !== $hash) {
+            return redirect ('/verify_email')->with('error_message', 'リンクが正しくありません');
+        }
+        // メール確認のマーク
+        if(!$user->hasVerifiedEmail()) {
+            $user->markEmailAsVerified();
+        }
+        return redirect()->route('viewRegister', ['id'=> $id]);
+    }
+
+    // 認証メールの再送信ページの表示
+    public function viewResendForm()
+    {
+        return view('auth.emails.resend');
+    }
+
+    // 認証メールの再送信処理
+    public function resend(Request $request)
+    {
+        $user = User::where('email', $request->email)->first();
+        if(!$user) {
+            return redirect ('/resend')->with('error_message', '認証されていないアドレスです');
+        }
+        if($user->email_verified == 1){
+            return redirect ('/resend')->with('error_message', '認証済のアドレスです。ログインページからログインしてください。');
+        }
+        $user->created_at = Carbon::now();
+        // メール確認リンクの生成
+        $verificationUrl = URL::temporarySignedRoute(
+            'verification.verify',
+            now()->addMinutes(60),
+            ['id' => $user->id, 'hash' => sha1($user->email)]
+        );
+        Mail::to($user->email)->send(new EmailVerification($user, $verificationUrl));
+        return view('auth.emails.verified');
     }
 }

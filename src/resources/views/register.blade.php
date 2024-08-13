@@ -10,15 +10,10 @@
 <div class="content__item">
   <form class="form" action="/register" method="post">
     @csrf
+    <input type="hidden" name="user_id" value="{{ $user_id }}">
     <input class="form__input" type="text" name="name" placeholder="名前" value="{{ old('name') }}">
     <div class="form__error">
       @error('name')
-      {{ $message }}
-      @enderror
-    </div>
-    <input class="form__input" type="text" name="email" placeholder="メールアドレス" value="{{ old('email') }}">
-    <div class="form__error">
-      @error('email')
       {{ $message }}
       @enderror
     </div>
