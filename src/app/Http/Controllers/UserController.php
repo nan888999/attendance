@@ -47,17 +47,15 @@ class UserController extends Controller
 
     public function login(Request $request)
     {
-        $credentials = $request->validate([
-            'email' => ['required'],
-            'password' => ['required'],
-        ],[
-            'email.required' => 'メールアドレスを入力してください',
-            'password.required' => 'パスワードを入力してください',
-        ]);
+        if (empty($request->email) || empty($request->password)) {
+            return back()->with(
+                'error_message', 'メールアドレスかパスワードが一致しません'
+            );
+        }
 
-        $user = User::where('email', $credentials['email'])->first();
+        $credentials = $request->only('email', 'password');
 
-        if ($user && Auth::attempt($credentials)) {
+        if (Auth::attempt($credentials)) {
             $request->session()->regenerate();
             return redirect()->intended('/');
         }

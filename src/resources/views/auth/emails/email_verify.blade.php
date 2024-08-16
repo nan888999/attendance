@@ -10,7 +10,7 @@
 <div class="content__item">
   <p>メールアドレスの認証を行います。<br>
   メールアドレスを入力し、「メール送信」ボタンを押してください。</p>
-  <form class="form" action="/verifyEmail" method="post">
+  <form class="form" action="/verify_email" method="post">
     @csrf
     <input class="form__input" type="text" name="email" placeholder="メールアドレス" value="{{ old('email') }}">
     <div class="form__error">

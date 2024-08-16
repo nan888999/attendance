@@ -20,7 +20,7 @@ Route::get('/login', [UserController::class, 'viewLogin'])->name('login');
 Route::post('/login', [UserController::class, 'login']);
 
 // 登録ページと登録処理
-Route::get('/register', [UserController::class, 'viewRegister']);
+Route::get('/register', [UserController::class, 'viewRegister'])->name('viewRegister');
 Route::post('/register', [UserController::class, 'register']);
 
 // メール認証ページとメール認証処理
@@ -43,6 +43,7 @@ Route::post('/work_end', [AttendanceController::class,'workEnd'])->middleware('a
 Route::post('/break_start', [AttendanceController::class, 'breakStart'])->middleware('auth');
 Route::post('/break_end', [AttendanceController::class,'breakEnd'])->middleware('auth');
 
+// 日付移動後の画面表示
 Route::get('/change_date', [AttendanceController::class, 'changeDate']);
 
 // ユーザー別勤怠表示

@@ -42,7 +42,7 @@ class AttendanceController extends Controller
 
         // 休憩時間計算
         $breaks = BreakTime::with('attendance')->whereDate('created_at', $date)->get();
-        $attendanceBreakTimes = [];
+        $attendance_break_times = [];
         foreach($breaks as $break) {
             if(!is_null($break->updated_at)) {
                 $attendance_id = $break->attendance_id;
@@ -144,7 +144,7 @@ class AttendanceController extends Controller
             }
         }
         $formatted_break_times = [];
-        foreach($attendance_break_times as $attendance->id => $total_break_seconds) {
+        foreach($attendance_break_times as $attendance_id => $total_break_seconds) {
             $break_hours = floor($total_break_seconds / 3600);
             $break_minutes = floor(($total_break_seconds %3600)/ 60);
             $break_seconds = $total_break_seconds % 60;

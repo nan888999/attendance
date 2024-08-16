@@ -21,7 +21,7 @@
 
 @section('content')
 <div class="attendance__table">
-  <form class="date__form" method="GET" action="/changeDate">
+  <form class="date__form" method="GET" action="/change_date">
     @csrf
     <button class="change_date" type="submit" name="change_date" value="previous"><</button>
     {{ $date }}
@@ -42,7 +42,7 @@
       @foreach($attendances as $attendance)
       <tr class="attendance__table-row">
           <td class="attendance__table-data">
-            <a class="user_name" href="{{ route('user.profile', ['userId' => $attendance->user_id]) }}">
+            <a class="user_name" href="{{ route('user.profile', ['user_id' => $attendance->user_id]) }}">
               {{ $attendance->user->name ?? '' }}
             </a>
           </td>

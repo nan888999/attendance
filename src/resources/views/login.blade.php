@@ -26,7 +26,7 @@
   </form>
   <div class="comment">
     アカウントをお持ちでない方はこちらから<br>
-    <a href="/verifyEmail">会員登録</a>
+    <a href="/verify_email">会員登録</a>
   </div>
 </div>
 @endsection
