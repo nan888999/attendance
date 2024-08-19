@@ -32,6 +32,9 @@
 ## テーブル設計
 <img width="667" alt="テーブル仕様書_attendance" src="https://github.com/user-attachments/assets/b2c7f23e-5276-44dd-b3a6-b739df996e89">
 
+## ER図
+<img width="709" alt="ER図_attendance" src="https://github.com/user-attachments/assets/e31839d2-03f7-4064-a1de-fb33cce9912f">
+
 ## 環境構築
 Dockerビルド
 1. git clone リンク
@@ -44,9 +47,6 @@ Laravel環境構築
 4. php artisan:key generate
 5. php artisan migrate
 6. php artisan schedule:work（スケジューラー起動）
-
-## ER図
-<img width="709" alt="ER図_attendance" src="https://github.com/user-attachments/assets/e31839d2-03f7-4064-a1de-fb33cce9912f">
 
 ## テストユーザー
 メールアドレス「test@test」
