@@ -55,11 +55,11 @@
             @endif
           </td>
         <td class="attendance__table-data">
-          {{ $formattedBreakTimes[$attendance->id] ?? '00:00:00' }}
+          {{ $formatted_break_times[$attendance->id] ?? '00:00:00' }}
         </td>
         <td class="attendance__table-data">
           @if($attendance->created_at != $attendance->updated_at)
-          {{ $formattedWorkTimes[$attendance->id] ?? '' }}
+          {{ $formatted_work_times[$attendance->id] ?? '' }}
           @else
           {{ '' }}
           @endif

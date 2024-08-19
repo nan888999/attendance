@@ -127,7 +127,7 @@ class AttendanceController extends Controller
     public function showProfile($user_id)
     {
         $user = User::where('id', $user_id)->first();
-        $attendances = Attendance::where('user_id',$user_id)->paginate(10);
+        $attendances = Attendance::where('user_id',$user_id)->paginate(5);
 
         // 休憩時間計算
         $attendance_break_times = [];
