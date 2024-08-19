@@ -1,5 +1,6 @@
 # 勤怠管理システムAtte
 勤怠管理システムです。
+![image](https://github.com/user-attachments/assets/8d8db124-c006-47ab-818a-6ae3be917584)
 
 ## 作成した目的
 企業の勤怠管理をするために作成しました。
@@ -44,8 +45,9 @@ Laravel環境構築
 5. php artisan migrate
 6. php artisan schedule:work（スケジューラー起動）
 
-
 ## ER図
 <img width="709" alt="ER図_attendance" src="https://github.com/user-attachments/assets/e31839d2-03f7-4064-a1de-fb33cce9912f">
 
 ## テストユーザー
+メールアドレス「test@test」
+パスワード「testtesttest」
